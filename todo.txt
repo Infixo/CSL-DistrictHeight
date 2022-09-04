@@ -1,0 +1,10 @@
+﻿
+Transpiler to change  GetRandomBuildingInfo calls from 3 places into extended calls that also take district ID and building ID
+- district to get proper min and max height (plus other info in the future)
+- building ID to set historical flag
+
+UI component - obvious
+
+Serialization of district data
+
+Options? not sure yet
