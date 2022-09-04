@@ -53,7 +53,7 @@ namespace DistrictHeight
             return 0;
         }
 
-        [HarmonyPrefix, HarmonyPatch(nameof(BuildingManager.GetRandomBuildingInfo))]
+        //[HarmonyPrefix, HarmonyPatch(nameof(BuildingManager.GetRandomBuildingInfo))]
         public static bool BuildingManager_GetRandomBuildingInfo_Prefix(BuildingManager __instance, ref BuildingInfo __result,
             // original arguments
             ref Randomizer r, ItemClass.Service service, ItemClass.SubService subService, ItemClass.Level level, int width, int length, BuildingInfo.ZoningMode zoningMode, int style,
@@ -107,6 +107,71 @@ namespace DistrictHeight
         }
     }
 
+    // an extension method is needed to be able to retrieve District data and set the building as historical when necessary
+    public static class BuildingManager_Extensions
+    {
+        public static BuildingInfo GetRandomBuildingInfoExt(this BuildingManager instance, ushort buildingID, ref Building data, PrivateBuildingAI buildingAI, byte district,
+            // original arguments
+            ref Randomizer r, ItemClass.Service service, ItemClass.SubService subService, ItemClass.Level level, int width, int length, BuildingInfo.ZoningMode zoningMode, int style)
+        {
+            // private variables we need to access in BuildingManager
+            // this is a very hacky method...
+            bool m_buildingsRefreshed = ExtensionsHelper.GetPrivateField<bool>(instance, "m_buildingsRefreshed");
+            Dictionary<int, FastList<ushort>>[] m_styleBuildings = ExtensionsHelper.GetPrivateField<Dictionary<int, FastList<ushort>>[]>(instance, "m_styleBuildings");
+            FastList<ushort>[] m_areaBuildings = ExtensionsHelper.GetPrivateField<FastList<ushort>[]>(instance, "m_areaBuildings");
+            // original code
+            if (!m_buildingsRefreshed)
+            {
+                CODebugBase<LogChannel>.Error(LogChannel.Core, "Random buildings not refreshed yet!");
+                return null;
+            }
+            //int areaIndex = GetAreaIndex(service, subService, level, width, length, zoningMode);
+            int areaIndex = BuildingManager_Patches.BuildingManager_GetAreaIndex_Reverse(service, subService, level, width, length, zoningMode);
+            FastList<ushort> possibleUpgrades;
+            if (style > 0)
+            {
+                style--;
+                DistrictStyle districtStyle = Singleton<DistrictManager>.instance.m_Styles[style];
+                possibleUpgrades = ((style > m_styleBuildings.Length || m_styleBuildings[style] == null || m_styleBuildings[style].Count <= 0 || !districtStyle.AffectsService(service, subService, level)) ? m_areaBuildings[areaIndex] : ((!m_styleBuildings[style].ContainsKey(areaIndex)) ? null : m_styleBuildings[style][areaIndex]));
+            }
+            else
+            {
+                possibleUpgrades = m_areaBuildings[areaIndex];
+            }
+            if (possibleUpgrades == null || possibleUpgrades.m_size == 0)
+                return null;
+            // this is core of the mod - filter out buildings using height
+            // TODO: get settings from district
+            FastList<ushort> allowedUpgrades = new FastList<ushort>();
+            foreach (ushort item in possibleUpgrades)
+            {
+                float height = PrefabCollection<BuildingInfo>.GetPrefab(item).GetHeight(); // TODO: this should be stored and reused later (dynamic late storage)
+                if (0f < height && height <= 30f) // TESTING HARDCODED VALUES - TODO get them from district data; what if there is no district? for city - no restrictions?
+                    allowedUpgrades.Add(item);
+            }
+            // is there anything possible?
+            if (allowedUpgrades.m_size < 2)
+            {
+                // 0 means none, but 1 means that ALL will be the same... a bit weird... could be parameterized
+                // no building that matches height criteria
+                // set building to Historical and return "normal" building instead
+                // PrivateBuildingAI
+                //public override void SetHistorical(ushort buildingID, ref Building data, bool historical)
+                // PROBLEM - here we don't know which building exactly is upgraded...
+                // need to modify public override BuildingInfo GetUpgradeInfo(ushort buildingID, ref Building data)
+                //return null;
+                // set current building to Historical
+                //BuildingInfo info = Singleton<BuildingManager>.instance.m_buildings.m_buffer[m_InstanceID.Building].Info;
+                buildingAI.SetHistorical(buildingID, ref data, true);
+                allowedUpgrades = possibleUpgrades; // for historical doesn't matter - can be anything
+            }
+            //areaIndex = r.Int32((uint)possibleUpgrades.m_size);
+            //__result = PrefabCollection<BuildingInfo>.GetPrefab(possibleUpgrades.m_buffer[areaIndex]);
+            areaIndex = r.Int32((uint)allowedUpgrades.m_size);
+            return PrefabCollection<BuildingInfo>.GetPrefab(allowedUpgrades.m_buffer[areaIndex]);
+        }
+    }
+
     // code generated by ILSpy
     [HarmonyPatch(typeof(PrivateBuildingAI))]
     public static class PrivateBuildingAI_Patches
@@ -128,7 +193,10 @@ namespace DistrictHeight
             DistrictManager instance = Singleton<DistrictManager>.instance;
             byte district = instance.GetDistrict(data.m_position);
             ushort style = instance.m_districts.m_buffer[district].m_Style;
-            __result = Singleton<BuildingManager>.instance.GetRandomBuildingInfo(ref r, __instance.m_info.m_class.m_service, __instance.m_info.m_class.m_subService, level, data.Width, data.Length, __instance.m_info.m_zoningMode, style);
+            //__result = Singleton<BuildingManager>.instance.GetRandomBuildingInfo(ref r, __instance.m_info.m_class.m_service, __instance.m_info.m_class.m_subService, level, data.Width, data.Length, __instance.m_info.m_zoningMode, style);
+            __result = Singleton<BuildingManager>.instance.GetRandomBuildingInfoExt(buildingID, ref data, __instance, district,
+                // original arguments
+                ref r, __instance.m_info.m_class.m_service, __instance.m_info.m_class.m_subService, level, data.Width, data.Length, __instance.m_info.m_zoningMode, style);
             return false;
         }
     }
