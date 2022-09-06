@@ -60,6 +60,7 @@
     <Compile Include="DistrictHeight.cs" />
     <Compile Include="DistrictHeightMod.cs" />
     <Compile Include="DistrictHeightUI.cs" />
+    <None Include="Logger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DistrictHeightPatcher.cs" />
     <None Include="UIButtons.cs" />

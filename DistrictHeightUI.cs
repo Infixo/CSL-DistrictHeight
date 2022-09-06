@@ -26,97 +26,167 @@ namespace DistrictHeight
 
     }
 
+    /*
+     * The design is very simple:
+     * a) line with labels and dropdows that reads: From XXX to YYY m // or Min XXX Max YYY m
+     * b) a button for refresh actions
+     * Ad. a) controls are in a wrapper @ (260, 340), size 130x20
+     * Then: 0 | 30 | 60 | 90 | 120
+     * Ad. b) Button @ (340,310), size 50x25
+     * */
     public static class DistrictHeightUI
     {
-        //private static DistrictWorldInfoPanel m_districtPanel;
-        private static UILabel m_districtHeightLabel;
-        private static UIDropDown m_minHeightDropDown;
-        private static UIDropDown m_maxHeightDropDown;
-        private static UIButton m_refreshButton;
-        private static bool m_disableEvents;
+        private static readonly Color32 COLOR_WHITE = new Color32(255, 255, 255, 255);
+        private static readonly Color32 COLOR_BLACK = new Color32(0, 0, 0, 0);
+        private static readonly Color32 COLOR_GREY = new Color32(170, 170, 170, 255);
+        private static readonly Color32 COLOR_GREEN = new Color32(206, 248, 0, 255);
+        private static readonly Color32 COLOR_NORMAL = new Color32(185, 221, 254, 255);
+        private static readonly float SCALE_SMALL  = 0.6250f; // 50/80
+        private static readonly float SCALE_MEDIUM = 0.8125f; // 65/80
+        private static readonly int ITEM_HEIGHT = 16;
+        //public static DistrictWorldInfoPanel m_districtPanel;
+        private static readonly float POSX = 250.0f;
+        private static readonly float POSY = 320.0f;
+        public static UILabel m_minLabel;
+        public static UILabel m_maxLabel;
+        //public static UILabel m_mmmLabel;
+        public static UIPanel m_minPanel;
+        public static UIPanel m_maxPanel;
+        public static UIDropDown m_minDropdown;
+        public static UIDropDown m_maxDropdown;
+        public static UILabel m_heightLabel;
+        public static UIButton m_applyButton;
+        //private static bool m_disableEvents;
         private static byte m_districtID; // currently selected district
 
         public static void Start(DistrictWorldInfoPanel districtPanel)
         {
             //m_districtPanel = districtPanel;
-            // add labels
-            m_districtHeightLabel = districtPanel.component.AddUIComponent<UILabel>();
-            m_districtHeightLabel.name = "DistrictHeightLabel";
-            m_districtHeightLabel.text = "district height";
-            //m_districtHeightLabel.textScale = 1.0f;
-            m_districtHeightLabel.textAlignment = UIHorizontalAlignment.Center;
-            m_districtHeightLabel.size = new Vector2(100, 20);
-            m_districtHeightLabel.relativePosition = new Vector2(200, 100);
-            m_districtHeightLabel.tooltip = "put some explanations here";
 
-            // add dropdowns
-            m_minHeightDropDown = districtPanel.component.AddUIComponent<UIDropDown>();
-            m_maxHeightDropDown = districtPanel.component.AddUIComponent<UIDropDown>();
-            //
-            //
-            //_minWorkLevelDropDown = UIDropDowns.AddLabelledDropDown(this, width - Margin - MenuWidth, 160f, Translations.Translate("ABLC_LVL_MIN"), 60f, accomodateLabel: false, tooltip: Translations.Translate("ABLC_CAT_WMN_TIP"));
-            //_minWorkLevelDropDown.items = new string[] { "1", "2", "3" };
+            // move existing elements to make some space
+            // UIPanel zonePanel = districtPanel.Find<UIPanel>("ZonePanel");
+            // for some reason this panel canot be moved... :(
+            // so I will move RICO bars separately
+            void moveSpriteToLeft(UISprite sprite)
+            {
+                sprite.relativePosition = new Vector2(0f, sprite.relativePosition.y);
+            }
+            moveSpriteToLeft(districtPanel.Find<UISprite>("ResidentialThumb"));
+            moveSpriteToLeft(districtPanel.Find<UISprite>("CommercialThumb"));
+            moveSpriteToLeft(districtPanel.Find<UISprite>("IndustrialThumb"));
+            moveSpriteToLeft(districtPanel.Find<UISprite>("OfficeThumb"));
+            /*
+            UISprite resSprite = districtPanel.Find<UISprite>("ResidentialThumb");
+            resSprite.relativePosition = new Vector2(0f, resSprite.relativePosition.y);
+            UISprite comSprite = districtPanel.Find<UISprite>("CommercialThumb");
+            comSprite.relativePosition = new Vector2(0f, comSprite.relativePosition.y);
+            UISprite indSprite = districtPanel.Find<UISprite>("IndustrialThumb");
+            indSprite.relativePosition = new Vector2(0f, indSprite.relativePosition.y);
+            UISprite offSprite = districtPanel.Find<UISprite>("OfficeThumb");
+            offSprite.relativePosition = new Vector2(0f, offSprite.relativePosition.y);
+            */
+            UIRadialChart zoneChart = districtPanel.Find<UIRadialChart>("ZoneChart");
+            zoneChart.relativePosition = new Vector2(250f, 30f); // this is working...
+            zoneChart.height = 60;
+            zoneChart.width = 60;
 
-            //_maxWorkLevelDropDown = UIDropDowns.AddLabelledDropDown(this, width - Margin - MenuWidth, 190f, Translations.Translate("ABLC_LVL_MAX"), 60f, accomodateLabel: false, tooltip: Translations.Translate("ABLC_CAT_WMX_TIP"));
-            //_maxWorkLevelDropDown.items = new string[] { "1", "2", "3" };
+            // LABEL district height
+            m_heightLabel = districtPanel.component.AddUIComponent<UILabel>();
+            m_heightLabel.name = "HeightLabel";
+            m_heightLabel.text = "Height [m]";
+            m_heightLabel.textScale = SCALE_SMALL;
+            m_heightLabel.relativePosition = new Vector2(POSX, POSY-15f);
+            m_heightLabel.textColor = COLOR_GREEN;
+            m_heightLabel.tooltip = "Controls the minimum and maximum height (in meters) of buildings that will spawn in the district";
+
+            // DROPDOWN min
+            m_minPanel = districtPanel.component.AttachUIComponent(UITemplateManager.GetAsGameObject("OptionsDropdownTemplate")) as UIPanel;
+            m_minPanel.relativePosition = new Vector2(POSX, POSY);
+            m_minPanel.height = 50; // default is 72 and it covers Style dropdown
+            //m_minPanel.autoLayout = false; // turning off allows to place label anywhere
+            m_minDropdown = m_minPanel.Find<UIDropDown>("Dropdown");
+            m_minDropdown.name = "HeightMinDropdown";
+            m_minDropdown.autoSize = false;
+            m_minDropdown.size = new Vector2(65f, 20f);
+            m_minDropdown.textScale = SCALE_MEDIUM;
+            m_minDropdown.textColor = COLOR_NORMAL;
+            m_minDropdown.disabledTextColor = COLOR_GREY;
+            m_minDropdown.itemHeight = ITEM_HEIGHT;
+            m_minDropdown.textFieldPadding = new RectOffset(5, 0, 4, 0); // default is l=14, so big gap
+            m_minDropdown.itemPadding = new RectOffset(5, 5, 2, 0); // default is l=14
+            // LABEL min
+            m_minLabel = m_minPanel.Find<UILabel>("Label");
+            //m_minLabel = districtPanel.component.AddUIComponent<UILabel>();
+            m_minLabel.name = "HeightMinLabel";
+            m_minLabel.text = "Min";
+            m_minLabel.textScale = SCALE_SMALL;
+            //m_minLabel.relativePosition = new Vector2(POSX + 0f, POSY + 5f); // autoLayout must be turned off first
+            m_minLabel.textColor = COLOR_GREEN;
+
+            // PANEL max
+            m_maxPanel = districtPanel.component.AttachUIComponent(UITemplateManager.GetAsGameObject("OptionsDropdownTemplate")) as UIPanel;
+            m_maxPanel.relativePosition = new Vector2(POSX + 70f, POSY);
+            m_maxPanel.height = 50;
+            // DROPDOWN max
+            //m_maxPanel.autoLayout = false;
+            m_maxDropdown = m_maxPanel.Find<UIDropDown>("Dropdown");
+            m_maxDropdown.name = "HeightMaxDropdown";
+            m_maxDropdown.autoSize = false;
+            m_maxDropdown.size = m_minDropdown.size;
+            m_maxDropdown.textScale = SCALE_MEDIUM;
+            m_maxDropdown.textColor = COLOR_NORMAL;
+            m_maxDropdown.disabledTextColor = COLOR_GREY;
+            m_maxDropdown.itemHeight = ITEM_HEIGHT;
+            m_maxDropdown.textFieldPadding = m_minDropdown.textFieldPadding;
+            m_maxDropdown.itemPadding = m_minDropdown.itemPadding;
+            // LABEL max
+            m_maxLabel = m_maxPanel.Find<UILabel>("Label");
+            //m_maxLabel = districtPanel.component.AddUIComponent<UILabel>();
+            m_maxLabel.name = "HeightMaxLabel";
+            m_maxLabel.text = "Max";
+            m_maxLabel.textScale = SCALE_SMALL;
+            //m_maxLabel.relativePosition = new Vector2(POSX + 75f, POSY + 5f);
+            m_maxLabel.textColor = COLOR_GREEN;
+
+            // dropdowns initialization
+            m_minDropdown.items = new string[] {  "0", "20", "40", "60", "80", "100", "120" };
+            m_maxDropdown.items = new string[] {       "20", "40", "60", "80", "100", "120", "140", "160", "--" };
+            m_minDropdown.selectedIndex = 0;
+            m_maxDropdown.selectedIndex = m_maxDropdown.items.Length-1;
+            m_minDropdown.listHeight = m_minDropdown.items.Length * ITEM_HEIGHT + 9;
+            m_maxDropdown.listHeight = m_maxDropdown.items.Length * ITEM_HEIGHT + 9;
 
             // BUTTON
-            m_refreshButton = districtPanel.component.AddUIComponent<UIButton>();
-            // Size and position.
+            m_applyButton = districtPanel.component.AddUIComponent<UIButton>();
+            m_applyButton.name = "HeightApplyButton";
+            m_applyButton.relativePosition = new Vector2(POSX+85f, POSY-23f);
+            m_applyButton.size = new Vector2(50f, 20f);
+            m_applyButton.normalBgSprite = "ButtonMenu";
+            m_applyButton.hoveredBgSprite = "ButtonMenuHovered";
+            m_applyButton.pressedBgSprite = "ButtonMenuPressed";
+            m_applyButton.disabledBgSprite = "ButtonMenuDisabled";
+            m_applyButton.disabledTextColor = new Color32(128, 128, 128, 255);
+            m_applyButton.canFocus = false;
+            m_applyButton.text = "Apply";
+            m_applyButton.tooltip = "refresh buildings";
+            m_applyButton.textScale = SCALE_SMALL;
+            m_applyButton.textVerticalAlignment = UIVerticalAlignment.Middle;
+            m_applyButton.textHorizontalAlignment = UIHorizontalAlignment.Center;
 
-            m_refreshButton.size = new Vector2(50, 20);
-            m_refreshButton.relativePosition = new Vector2(250, 150);
-            // Appearance.
-            m_refreshButton.normalBgSprite = "ButtonMenu";
-            m_refreshButton.hoveredBgSprite = "ButtonMenuHovered";
-            m_refreshButton.pressedBgSprite = "ButtonMenuPressed";
-            m_refreshButton.disabledBgSprite = "ButtonMenuDisabled";
-            m_refreshButton.disabledTextColor = new Color32(128, 128, 128, 255);
-            m_refreshButton.canFocus = false;
-            // Text.
-            m_refreshButton.text = "REFRESH";
-            m_refreshButton.tooltip = "refresh buildings";
-            //m_refreshButton.textScale = 1.0f;
-            //m_refreshButton.textPadding = new RectOffset(0, 0, 0, 0);
-            m_refreshButton.textVerticalAlignment = UIVerticalAlignment.Middle;
-            m_refreshButton.textHorizontalAlignment = UIHorizontalAlignment.Center;
-            // hook event handlers
-            //m_refreshButton.eventClicked += ClearBuildings;
-
-            // Add event handlers.
-            m_minHeightDropDown.eventSelectedIndexChanged += (control, index) =>
+            // event handlers
+            m_minDropdown.eventSelectedIndexChanged += (UIComponent control, int index) =>
             {
-                // Don't do anything if events are disabled.
-                if (!m_disableEvents)
-                {
-                    // Set minimum level of building in dictionary.
-                    //UpdateMinLevel((byte)index);
-
-                    // If the minimum level is now greater than the maximum level, increase the maximum to match the minimum.
-                    //if (index > m_maxLevelDropDown.selectedIndex)
-                    //{
-                      //  m_maxLevelDropDown.selectedIndex = index;
-                    //}
-                }
+                float minH = index * 20.0f;
+                MessageBox($"Minimum height for district {m_districtID} set to {minH}");
             };
 
-            m_maxHeightDropDown.eventSelectedIndexChanged += (control, index) =>
+            m_maxDropdown.eventSelectedIndexChanged += (UIComponent control, int index) =>
             {
-                // Don't do anything if events are disabled.
-                if (!m_disableEvents)
-                {
-                    // Update maximum level.
-                    //UpdateMaxLevel((byte)index);
-
-                    // If the maximum level is now less than the minimum level, reduce the minimum to match the maximum.
-                    //if (index < m_minLevelDropDown.selectedIndex)
-                    //{
-                        //m_minLevelDropDown.selectedIndex = index;
-                    //}
-                }
+                float maxH = (index == ((UIDropDown)control).items.Length-1) ? 999f : (index+1) * 20.0f;
+                MessageBox($"Maximum height for district {m_districtID} set to {maxH}");
             };
 
-            m_refreshButton.eventClick += (control, clickEvent) =>
+            m_applyButton.eventClick += (control, clickEvent) =>
             {
                 // Local references for SimulationManager action.
                 //ushort buildingID = m_targetID;
@@ -126,17 +196,21 @@ namespace DistrictHeight
                 //{
                 //    LevelUtils.ForceLevel(m_targetID, targetLevel);
                 //});
-
-                // Check to see if we should increase this buildings maximum level.
-                //if (Buildings.GetMaxLevel(m_targetID) < _upgradeLevel)
-                //{
-                //    m_maxLevelDropDown.selectedIndex = _upgradeLevel;
-                //}
                 ExceptionPanel panel = UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel");
                 panel.SetMessage("DistrictHeightMod", $"Refreshing District ID {m_districtID}", false);
             };
 
 
+        }
+
+        /// <summary>
+        /// Displays a message box
+        /// </summary>
+        /// <param name="text">Text to be shown</param>
+        public static void MessageBox(string text)
+        {
+            ExceptionPanel panel = UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel");
+            panel.SetMessage("District Height Mod", text, false);
         }
 
         /// <summary>
@@ -146,7 +220,7 @@ namespace DistrictHeight
         {
             //GetCurrentInstanceID
             // Disable events while we make changes to avoid triggering event handler.
-            m_disableEvents = true;
+            //m_disableEvents = true;
 
             // Update selected district ID.
             m_districtID = WorldInfoPanel.GetCurrentInstanceID().District;
@@ -164,7 +238,7 @@ namespace DistrictHeight
             //m_maxHeightDropDown.selectedIndex = Districts.GetDistrictMax(m_districtID, true);
 
             // All done: re-enable events.
-            m_disableEvents = false;
+            //m_disableEvents = false;
         }
     }
 
