@@ -1,7 +1,4 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Text;
+﻿using System;
 using UnityEngine;
 using ColossalFramework.UI;
 using ColossalFramework.Plugins;
@@ -28,16 +25,15 @@ namespace DistrictHeight
 
     /*
      * The design is very simple:
-     * a) line with labels and dropdows that reads: From XXX to YYY m // or Min XXX Max YYY m
-     * b) a button for refresh actions
-     * Ad. a) controls are in a wrapper @ (260, 340), size 130x20
-     * Then: 0 | 30 | 60 | 90 | 120
-     * Ad. b) Button @ (340,310), size 50x25
+     * a) label with generic info
+     * b) button to apply heights to all buildings at once
+     * c) minimum height dropdown
+     * d) maximum height dropdown
      * */
     public static class DistrictHeightUI
     {
-        private static readonly Color32 COLOR_WHITE = new Color32(255, 255, 255, 255);
-        private static readonly Color32 COLOR_BLACK = new Color32(0, 0, 0, 0);
+        //private static readonly Color32 COLOR_WHITE = new Color32(255, 255, 255, 255);
+        //private static readonly Color32 COLOR_BLACK = new Color32(0, 0, 0, 0);
         private static readonly Color32 COLOR_GREY = new Color32(170, 170, 170, 255);
         private static readonly Color32 COLOR_GREEN = new Color32(206, 248, 0, 255);
         private static readonly Color32 COLOR_NORMAL = new Color32(185, 221, 254, 255);
@@ -149,10 +145,15 @@ namespace DistrictHeight
             m_maxLabel.textColor = COLOR_GREEN;
 
             // dropdowns initialization
-            m_minDropdown.items = new string[] {  "0", "20", "40", "60", "80", "100", "120" };
-            m_maxDropdown.items = new string[] {       "20", "40", "60", "80", "100", "120", "140", "160", "--" };
+            m_minDropdown.items = new string[DistrictHeightManager.MinList.Length];
+            for (int i = 0; i < DistrictHeightManager.MinList.Length; i++)
+                m_minDropdown.items[i] = DistrictHeightManager.MinList[i].ToString("F");
+            m_maxDropdown.items = new string[DistrictHeightManager.MaxList.Length];
+            for (int i = 0; i < DistrictHeightManager.MaxList.Length; i++)
+                m_maxDropdown.items[i] = DistrictHeightManager.MaxList[i].ToString("F");
+            m_maxDropdown.items[0] = "--"; // this means 999
             m_minDropdown.selectedIndex = 0;
-            m_maxDropdown.selectedIndex = m_maxDropdown.items.Length-1;
+            m_maxDropdown.selectedIndex = 0;
             m_minDropdown.listHeight = m_minDropdown.items.Length * ITEM_HEIGHT + 9;
             m_maxDropdown.listHeight = m_maxDropdown.items.Length * ITEM_HEIGHT + 9;
 
@@ -176,14 +177,16 @@ namespace DistrictHeight
             // event handlers
             m_minDropdown.eventSelectedIndexChanged += (UIComponent control, int index) =>
             {
-                float minH = index * 20.0f;
-                MessageBox($"Minimum height for district {m_districtID} set to {minH}");
+                float minH = DistrictHeightManager.MinList[index];
+                DistrictHeightManager.Min[m_districtID] = minH;
+                //MessageBox($"Minimum height for district {m_districtID} set to {minH}");
             };
 
             m_maxDropdown.eventSelectedIndexChanged += (UIComponent control, int index) =>
             {
-                float maxH = (index == ((UIDropDown)control).items.Length-1) ? 999f : (index+1) * 20.0f;
-                MessageBox($"Maximum height for district {m_districtID} set to {maxH}");
+                float maxH = DistrictHeightManager.MaxList[index];
+                DistrictHeightManager.Max[m_districtID] = maxH;
+                //MessageBox($"Maximum height for district {m_districtID} set to {maxH}");
             };
 
             m_applyButton.eventClick += (control, clickEvent) =>
@@ -197,7 +200,7 @@ namespace DistrictHeight
                 //    LevelUtils.ForceLevel(m_targetID, targetLevel);
                 //});
                 ExceptionPanel panel = UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel");
-                panel.SetMessage("DistrictHeightMod", $"Refreshing District ID {m_districtID}", false);
+                panel.SetMessage("District Height", $"District ID is {m_districtID}. Min = {DistrictHeightManager.Min[m_districtID]}, Max = {DistrictHeightManager.Max[m_districtID]}", false);
             };
 
 
@@ -207,38 +210,53 @@ namespace DistrictHeight
         /// Displays a message box
         /// </summary>
         /// <param name="text">Text to be shown</param>
-        public static void MessageBox(string text)
-        {
-            ExceptionPanel panel = UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel");
-            panel.SetMessage("District Height Mod", text, false);
-        }
+        //public static void MessageBox(string text)
+        //{
+            //ExceptionPanel panel = UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel");
+            //panel.SetMessage("District Height Mod", text, false);
+        //}
 
         /// <summary>
         /// Called when the selected district has changed.
         /// </summary>
         public static void DistrictChanged(DistrictWorldInfoPanel districtPanel)
         {
-            //GetCurrentInstanceID
-            // Disable events while we make changes to avoid triggering event handler.
-            //m_disableEvents = true;
-
             // Update selected district ID.
             m_districtID = WorldInfoPanel.GetCurrentInstanceID().District;
-            DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, $"Selected district is {m_districtID}");
 
-            // create dialog panel
-            //ExceptionPanel panel = UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel");
-            //panel.SetMessage("DistrictHeightMod", $"District ID is {m_districtID}.", false);
+            // minimum height
+            float minH = DistrictHeightManager.Min[m_districtID];
+            if (minH == 0f)
+                m_minDropdown.selectedIndex = 0;
+            else
+            {
+                int idx = Array.IndexOf(DistrictHeightManager.MinList, minH);
+                if (idx >= 0)
+                    m_minDropdown.selectedIndex = idx;
+                else
+                {
+                    Debug.Log("element min not found, resetting");
+                    m_minDropdown.selectedIndex = 0;
+                }
+            }
 
-            // Set name.
-            //m_nameLabel.text = Singleton<DistrictManager>.instance.GetDistrictName(m_districtID);
+            // maximum height
+            float maxH = DistrictHeightManager.Max[m_districtID];
+            if (maxH == 0f)
+                m_maxDropdown.selectedIndex = 0;
+            else
+            {
+                int idx = Array.IndexOf(DistrictHeightManager.MaxList, maxH);
+                if (idx >= 0)
+                    m_maxDropdown.selectedIndex = idx;
+                else
+                {
+                    Debug.Log("element max not found, resetting");
+                    m_maxDropdown.selectedIndex = 0;
+                }
+            }
 
-            // Set min and max levels.
-            //m_minHeightDropDown.selectedIndex = Districts.GetDistrictMin(m_districtID, true);
-            //m_maxHeightDropDown.selectedIndex = Districts.GetDistrictMax(m_districtID, true);
-
-            // All done: re-enable events.
-            //m_disableEvents = false;
+            DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, $"Selected district is {m_districtID}. Min height is {minH}, max height is {maxH}");
         }
     }
 

@@ -27,7 +27,8 @@ namespace DistrictHeight
         // called when level is loaded
         public void OnLevelLoaded(LoadMode mode)
         {
-            //throw new System.NotImplementedException();
+            if (DistrictHeightManager.Min == null || DistrictHeightManager.Max == null)
+                DistrictHeightManager.ResetHeights();
         }
 
         // called when unloading begins
