@@ -63,11 +63,6 @@
     <None Include="Logger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DistrictHeightPatcher.cs" />
-    <None Include="UIButtons.cs" />
-    <None Include="UIDropDowns.cs" />
-    <None Include="UILabels.cs" />
-    <None Include="UIUtils.cs" />
-    <None Include="UI-samples.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
