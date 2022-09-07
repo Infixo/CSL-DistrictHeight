@@ -1,11 +1,7 @@
 ﻿using System;
-//using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
-//using System.Text;
-//using ColossalFramework;
 using ColossalFramework.IO;
-//using UnityEngine;
 
 namespace DistrictHeight
 {
@@ -69,14 +65,16 @@ namespace DistrictHeight
 
     public static class DistrictHeightManager
     {
-        private static float[] m_minHeights; // = new float[DistrictManager.MAX_DISTRICT_COUNT];
-        private static float[] m_maxHeights; // = new float[DistrictManager.MAX_DISTRICT_COUNT];
+        private static float[] m_minHeights;
+        private static float[] m_maxHeights;
 
         public static float[] Min { get { return m_minHeights; } set { m_minHeights = value; } }
         public static float[] Max { get { return m_maxHeights; } set { m_maxHeights = value; } }
 
-        public static readonly float[] MinList = new float[] { 0, 10, 20, 30, 40, 50, 60, 80, 100 };
-        public static readonly float[] MaxList = new float[] { 0, 150, 120, 100, 80, 70, 60, 50, 40, 30, 20, 10 };
+        // Minimum: Sky: 60/70/80 High: 35/40/45 Med: 10/15/20
+        public static readonly float[] MinList = new float[] { 0, 10, 15, 20, 35, 40, 45, 60, 70, 80 };
+        // Maximum: Low 15/18/21 Medium 25/30/35/40 High 50/60/70/80/90/100
+        public static readonly float[] MaxList = new float[] { 0, 100, 90, 80, 70, 60, 50, 40, 35, 30, 25, 21, 18, 15 };
 
         public static void ResetHeights()
         {
@@ -92,13 +90,10 @@ namespace DistrictHeight
 
 	public class DistrictHeightData : IDataContainer
 	{
-		private static readonly string PREFIX = "DistrictHeight";
 		private static readonly int VERSION = 1; // stored as Int8, so version should be 1..127
 
 		public void Serialize(DataSerializer s)
 		{
-			// header
-			s.WriteUniqueString(PREFIX);
 			s.WriteInt8(VERSION);
 
 			// VERSION 1
@@ -114,26 +109,10 @@ namespace DistrictHeight
 
 		public void Deserialize(DataSerializer s)
 		{
-			string prefix;
-			// header
-			try
-			{
-				prefix = s.ReadUniqueString();
-			}
-			catch
-			{
-                // this assumes it is a load of am old save
-                DistrictHeightManager.ResetHeights();
-				return;
-			}
-			if (prefix != PREFIX)
-				// some error reading savefile - should NOT happen
-				throw new Exception($"DistrictHeight: cannot read data from savefile, wrong prefix {prefix}");
-
 			int version = s.ReadInt8();
 
 			// VERSION 1
-			if (version >= 1)
+			if (version == 1)
 			{
 				int numDist = s.ReadInt16();
 				// data - min heights
@@ -150,7 +129,6 @@ namespace DistrictHeight
 
 		public void AfterDeserialize(DataSerializer s)
 		{
-			// Log. all ok
 		}
 	}
 

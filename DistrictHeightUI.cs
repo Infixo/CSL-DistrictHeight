@@ -40,12 +40,10 @@ namespace DistrictHeight
         private static readonly float SCALE_SMALL  = 0.6250f; // 50/80
         private static readonly float SCALE_MEDIUM = 0.8125f; // 65/80
         private static readonly int ITEM_HEIGHT = 16;
-        //public static DistrictWorldInfoPanel m_districtPanel;
         private static readonly float POSX = 250.0f;
         private static readonly float POSY = 320.0f;
         public static UILabel m_minLabel;
         public static UILabel m_maxLabel;
-        //public static UILabel m_mmmLabel;
         public static UIPanel m_minPanel;
         public static UIPanel m_maxPanel;
         public static UIDropDown m_minDropdown;
@@ -57,8 +55,6 @@ namespace DistrictHeight
 
         public static void Start(DistrictWorldInfoPanel districtPanel)
         {
-            //m_districtPanel = districtPanel;
-
             // move existing elements to make some space
             // UIPanel zonePanel = districtPanel.Find<UIPanel>("ZonePanel");
             // for some reason this panel canot be moved... :(
@@ -71,16 +67,6 @@ namespace DistrictHeight
             moveSpriteToLeft(districtPanel.Find<UISprite>("CommercialThumb"));
             moveSpriteToLeft(districtPanel.Find<UISprite>("IndustrialThumb"));
             moveSpriteToLeft(districtPanel.Find<UISprite>("OfficeThumb"));
-            /*
-            UISprite resSprite = districtPanel.Find<UISprite>("ResidentialThumb");
-            resSprite.relativePosition = new Vector2(0f, resSprite.relativePosition.y);
-            UISprite comSprite = districtPanel.Find<UISprite>("CommercialThumb");
-            comSprite.relativePosition = new Vector2(0f, comSprite.relativePosition.y);
-            UISprite indSprite = districtPanel.Find<UISprite>("IndustrialThumb");
-            indSprite.relativePosition = new Vector2(0f, indSprite.relativePosition.y);
-            UISprite offSprite = districtPanel.Find<UISprite>("OfficeThumb");
-            offSprite.relativePosition = new Vector2(0f, offSprite.relativePosition.y);
-            */
             UIRadialChart zoneChart = districtPanel.Find<UIRadialChart>("ZoneChart");
             zoneChart.relativePosition = new Vector2(250f, 30f); // this is working...
             zoneChart.height = 60;
@@ -147,10 +133,10 @@ namespace DistrictHeight
             // dropdowns initialization
             m_minDropdown.items = new string[DistrictHeightManager.MinList.Length];
             for (int i = 0; i < DistrictHeightManager.MinList.Length; i++)
-                m_minDropdown.items[i] = DistrictHeightManager.MinList[i].ToString("F");
+                m_minDropdown.items[i] = DistrictHeightManager.MinList[i].ToString("F1");
             m_maxDropdown.items = new string[DistrictHeightManager.MaxList.Length];
             for (int i = 0; i < DistrictHeightManager.MaxList.Length; i++)
-                m_maxDropdown.items[i] = DistrictHeightManager.MaxList[i].ToString("F");
+                m_maxDropdown.items[i] = DistrictHeightManager.MaxList[i].ToString("F1");
             m_maxDropdown.items[0] = "--"; // this means 999
             m_minDropdown.selectedIndex = 0;
             m_maxDropdown.selectedIndex = 0;
@@ -205,16 +191,6 @@ namespace DistrictHeight
 
 
         }
-
-        /// <summary>
-        /// Displays a message box
-        /// </summary>
-        /// <param name="text">Text to be shown</param>
-        //public static void MessageBox(string text)
-        //{
-            //ExceptionPanel panel = UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel");
-            //panel.SetMessage("District Height Mod", text, false);
-        //}
 
         /// <summary>
         /// Called when the selected district has changed.

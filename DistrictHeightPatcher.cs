@@ -143,11 +143,13 @@ namespace DistrictHeight
             // this is core of the mod - filter out buildings using height
             // TODO: get settings from district
             FastList<ushort> allowedUpgrades = new FastList<ushort>();
+            float minH = DistrictHeightManager.Min[district];
+            float maxH = DistrictHeightManager.Max[district];
             foreach (ushort item in possibleUpgrades)
             {
                 float height = PrefabCollection<BuildingInfo>.GetPrefab(item).GetHeight(); // TODO: this should be stored and reused later (dynamic late storage)
-                if (0f < height && height <= 30f) // TESTING HARDCODED VALUES - TODO get them from district data; what if there is no district? for city - no restrictions?
-                    allowedUpgrades.Add(item);
+                if (height >= minH && (maxH == 0f || height <= maxH)) // 0.0f means unlimited height actually
+                        allowedUpgrades.Add(item);
             }
             // is there anything possible?
             if (allowedUpgrades.m_size < 2)

@@ -3,8 +3,58 @@ Transpiler to change  GetRandomBuildingInfo calls from 3 places into extended ca
 - district to get proper min and max height (plus other info in the future)
 - building ID to set historical flag
 
-UI component - obvious
-
-Serialization of district data
-
 Options? not sure yet
+Maximum
+8 - mid. LOW
+18 - min. EUR / max. RES-LOW
+25 - mid. EUR
+30 - max. EUR
+35 - max. Medium Group
+
+70 - max. Highrise Group
+
+Maximum:
+Low 15/18/21
+Medium 25/30/35/40
+High 50/60/70/80/90/100
+
+Minimum:
+Sky: 60/70/80
+High: 35/40/45
+Med: 10/15/20
+
+Parameters
+
+There are approx. 1000 growables in the game
+Target granularity = 15 (i.e. 15 height groups, in each approx. 67 buildings)
+Thresholds are (rounded down)
+4 5 6 7 8 10 13 19 21 24 27 31 35 51 88
+
+EUR buildings are: 18.7 - 29.7 [avg. 23.6]
+
+HIGH zones - ~400 buildings
+Splitting into 16 groups (each 25 buildings)
+
+12,1
+15,7
+18,9
+20,9
+24,6
+27,3
+30,5
+32
+33,4
+34,6
+38,1
+42,4
+49,6
+62,8
+72,4
+126
+
+My Groups
+Low up to 18
+Med 18-35 [inc. Eur]
+High 35-70
+Sky 70+
+
