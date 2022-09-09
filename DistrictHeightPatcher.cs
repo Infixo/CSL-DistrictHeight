@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿//using System.Collections;
+using System.Collections.Generic;
+using System.Reflection.Emit;
 using UnityEngine;
 using ColossalFramework;
 using ColossalFramework.Math;
@@ -200,6 +202,57 @@ namespace DistrictHeight
                 // original arguments
                 ref r, __instance.m_info.m_class.m_service, __instance.m_info.m_class.m_subService, level, data.Width, data.Length, __instance.m_info.m_zoningMode, style);
             return false;
+        }
+    }
+
+    /* 
+     * ZoneBlock::SimulationStep(ushort blockID)
+     * Long method, a Transpiler is best approach here
+     * 
+     * original code:
+     * buildingInfo = Singleton<BuildingManager>.instance.GetRandomBuildingInfo(ref Singleton<SimulationManager>.instance.m_randomizer, service, subService, level, num26, num25, zoningMode3, style);
+     * changed code:
+     * buildingInfo = Singleton<BuildingManager>.instance.GetRandomBuildingInfoExt(buildingID, ref data, __instance, district,
+     *           // original arguments
+     *           ref r, __instance.m_info.m_class.m_service, __instance.m_info.m_class.m_subService, level, data.Width, data.Length, __instance.m_info.m_zoningMode, style);
+     * 
+     */
+
+    [HarmonyPatch(typeof(ZoneBlock), nameof(ZoneBlock.SimulationStep))]
+    public static class ZoneBlock_SimulationStep_Patch
+    {
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            IEnumerator<CodeInstruction> ilcode = instructions.GetEnumerator();
+            while (ilcode.MoveNext())
+            {
+                CodeInstruction instr = ilcode.Current;
+                if (instr.opcode == OpCodes.Callvirt && instr.operand == AccessTools.Method(typeof(BuildingWrapper), "OnCalculateSpawn"))
+                {
+                    DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "found OnCalculateSpawn");
+                    //DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, instr.operand.ToString());
+                }
+                yield return instr;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(PrivateBuildingAI), nameof(PrivateBuildingAI.SimulationStep))]
+    public static class PrivateBuildingAI_SimulationStep_Patch
+    {
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            IEnumerator<CodeInstruction> ilcode = instructions.GetEnumerator();
+            while (ilcode.MoveNext())
+            {
+                CodeInstruction instr = ilcode.Current;
+                if (instr.opcode == OpCodes.Call )//&& instr.operand == AccessTools.Method("BuildingWrapper.OnCalculateSpawn"))
+                {
+                    //DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "found OnCalculateSpawn");
+                    DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, instr.operand.ToString());
+                }
+                yield return instr;
+            }
         }
     }
 
