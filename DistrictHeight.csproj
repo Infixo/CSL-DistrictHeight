@@ -68,7 +68,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Steam\district_modded.png" />
     <Content Include="ideas.txt" />
+    <Content Include="Steam\pic1.png" />
+    <Content Include="Steam\pic2.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

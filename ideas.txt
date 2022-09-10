@@ -1,4 +1,16 @@
-﻿Handling new buildings - a bit more complex than upgrades...
+﻿COMPATIBILITY
+
+Realistic Population Revisited - compatible
+
+Advanced Building Level Control - PrivateBuildingAI.GetUpgradeInfo - should be compatible with Randomization OFF
+
+Ploppable RICO - changes PrivateBuildingAI.SimulationStep 2x using a Transpiler, so it should be compatible
+
+Building Themes - not compatible, rewrites the same same core methods
+
+=================
+IDEAS
+Handling new buildings - a bit more complex than upgrades...
 1. Option to apply checks for upgradesn only?
 2. New buildings - option to turn off min / max?
 3. Some feedback when some buildings are not available. 
