@@ -145,7 +145,7 @@ namespace DistrictHeight
             if (possibleUpgrades == null || possibleUpgrades.m_size == 0)
                 return null;
             // this is core of the mod - filter out buildings using height
-            // TODO: get settings from district
+            // get settings from district
             FastList<ushort> allowedUpgrades = new FastList<ushort>();
             float minH = DistrictHeightManager.Min[district];
             float maxH = DistrictHeightManager.Max[district];
@@ -156,8 +156,8 @@ namespace DistrictHeight
                         allowedUpgrades.Add(item);
             }
             // is there anything possible?
-            if (!isUpgrade) DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, $"DH: new {subService} {width}x{length}");
-            if (allowedUpgrades.m_size < 2)
+            //if (!isUpgrade) DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, $"DH: new {subService} {width}x{length}");
+            if (allowedUpgrades.m_size == 0)
             {
                 // 0 means none, but 1 means that ALL will be the same... a bit weird... could be parameterized
                 // no building that matches height criteria
@@ -176,7 +176,7 @@ namespace DistrictHeight
                 }
                 else
                 {
-                    DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "...no suitable buildings");
+                    //DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "...no suitable buildings");
                     // TODO: what happes when there is no option for a new building?
                     //allowedUpgrades = possibleUpgrades;
                     return null;
@@ -295,12 +295,6 @@ IL_0106: stloc.s 7
                 //if (instr.opcode == OpCodes.Callvirt && instr.operand == AccessTools.Method(typeof(BuildingWrapper), "OnCalculateSpawn"))
                 if (instr.opcode == OpCodes.Callvirt && instr.operand == AccessTools.Method(typeof(BuildingManager), "GetRandomBuildingInfo"))
                 {
-                    // 11 instructions are the same
-                    //for (var i = 0; i < 11; i++)
-                    //{
-                        //yield return ilcode.Current;
-                        //_ = ilcode.MoveNext();
-                    //}
                     // new and changed instructions
                     yield return new CodeInstruction(OpCodes.Ldloc_S, 64); // ldloc.s 64
                     yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(BuildingManager_Extensions), "GetRandomBuildingInfoDis"));
