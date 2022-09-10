@@ -292,14 +292,15 @@ IL_0106: stloc.s 7
             while (ilcode.MoveNext())
             {
                 CodeInstruction instr = ilcode.Current;
-                if (instr.opcode == OpCodes.Callvirt && instr.operand == AccessTools.Method(typeof(BuildingWrapper), "OnCalculateSpawn"))
+                //if (instr.opcode == OpCodes.Callvirt && instr.operand == AccessTools.Method(typeof(BuildingWrapper), "OnCalculateSpawn"))
+                if (instr.opcode == OpCodes.Callvirt && instr.operand == AccessTools.Method(typeof(BuildingManager), "GetRandomBuildingInfo"))
                 {
                     // 11 instructions are the same
-                    for (var i = 0; i < 11; i++)
-                    {
-                        yield return ilcode.Current;
-                        _ = ilcode.MoveNext();
-                    }
+                    //for (var i = 0; i < 11; i++)
+                    //{
+                        //yield return ilcode.Current;
+                        //_ = ilcode.MoveNext();
+                    //}
                     // new and changed instructions
                     yield return new CodeInstruction(OpCodes.Ldloc_S, 64); // ldloc.s 64
                     yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(BuildingManager_Extensions), "GetRandomBuildingInfoDis"));
@@ -315,6 +316,27 @@ IL_0106: stloc.s 7
         }
     }
 
+    /*
+    // ORIGINAL IL CODE 
+    // BuildingInfo randomBuildingInfo = Singleton<BuildingManager>.instance.GetRandomBuildingInfo(ref Singleton<SimulationManager>.instance.m_randomizer, m_info.m_class.m_service, subService, level, width, num3, m_info.m_zoningMode, style2);
+	IL_056d: call !0 class [ColossalManaged]ColossalFramework.Singleton`1<class BuildingManager>::get_instance()
+	IL_0572: call !0 class [ColossalManaged]ColossalFramework.Singleton`1<class SimulationManager>::get_instance()
+	IL_0577: ldflda valuetype [ColossalManaged]ColossalFramework.Math.Randomizer SimulationManager::m_randomizer
+	IL_057c: ldarg.0
+	IL_057d: ldfld class BuildingInfo BuildingAI::m_info
+	IL_0582: ldfld class ItemClass BuildingInfo::m_class
+	IL_0587: ldfld valuetype ItemClass/Service ItemClass::m_service
+	IL_058c: ldloc.s 16
+	IL_058e: ldloc.s 17
+	IL_0590: ldloc.s 18
+	IL_0592: ldloc.s 19
+	IL_0594: ldarg.0
+	IL_0595: ldfld class BuildingInfo BuildingAI::m_info
+	IL_059a: ldfld valuetype BuildingInfo/ZoningMode BuildingInfo::m_zoningMode
+	IL_059f: ldloc.s 22
+	IL_05a1: callvirt instance class BuildingInfo BuildingManager::GetRandomBuildingInfo(valuetype [ColossalManaged]ColossalFramework.Math.Randomizer&, valuetype ItemClass/Service, valuetype ItemClass/SubService, valuetype ItemClass/Level, int32, int32, valuetype BuildingInfo/ZoningMode, int32)
+	IL_05a6: stloc.s 23
+    */
     [HarmonyPatch(typeof(PrivateBuildingAI), nameof(PrivateBuildingAI.SimulationStep))]
     public static class PrivateBuildingAI_SimulationStep_Patch
     {
@@ -324,8 +346,15 @@ IL_0106: stloc.s 7
             while (ilcode.MoveNext())
             {
                 CodeInstruction instr = ilcode.Current;
-                if (instr.opcode == OpCodes.Call )//&& instr.operand == AccessTools.Method("BuildingWrapper.OnCalculateSpawn"))
+                if (instr.opcode == OpCodes.Callvirt && instr.operand == AccessTools.Method(typeof(BuildingManager), "GetRandomBuildingInfo"))
                 {
+                    // new and changed instructions
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, 21); // put district on stack:ldloc.s 21
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(BuildingManager_Extensions), "GetRandomBuildingInfoDis"));
+                    // skip old instructions
+                    _ = ilcode.MoveNext();
+                    // continue with the rest
+                    instr = ilcode.Current;
                     //DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "found OnCalculateSpawn");
                     //DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, instr.operand.ToString());
                 }

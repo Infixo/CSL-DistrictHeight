@@ -1,4 +1,13 @@
-﻿
+﻿Handling new buildings - a bit more complex than upgrades...
+1. Option to apply checks for upgradesn only?
+2. New buildings - option to turn off min / max?
+3. Some feedback when some buildings are not available. 
+Setting up heights
+1. Store "params" in .xml.
+2. Param = name + min + max + could be some other behaviour flags.
+3. Apply one or more "params" for a distrrict.
+Upgrade / to 1 option only - allowed or not?
+
 Transpiler to change  GetRandomBuildingInfo calls from 3 places into extended calls that also take district ID and building ID
 - district to get proper min and max height (plus other info in the future)
 - building ID to set historical flag
