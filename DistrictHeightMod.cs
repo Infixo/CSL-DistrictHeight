@@ -7,7 +7,7 @@ namespace DistrictHeight
 {
     public class DistrictHeightMod : IUserMod, ILoadingExtension
     {
-        public string Name => "District Height";
+        public string Name => "District Height 0.8";
         public string Description => "Controls height of buildings in the distric";
 
         public void OnEnabled()

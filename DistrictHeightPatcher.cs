@@ -15,29 +15,30 @@ namespace DistrictHeight
 
         public static void PatchAll()
         {
-            if (patched) { Debug.Log("PatchAll: already patched!"); return; }
+            if (patched) { Debug.Log($"{HarmonyId}.PatchAll: already patched!"); return; }
             //Harmony.DEBUG = true;
             var harmony = new Harmony(HarmonyId);
             harmony.PatchAll();
             if (Harmony.HasAnyPatches(HarmonyId))
             {
-                DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, $"{HarmonyId} methods patched ok");
+                Debug.Log($"{HarmonyId}.PatchAll: OK methods patched");
                 patched = true;
                 var myOriginalMethods = harmony.GetPatchedMethods();
                 foreach (var method in myOriginalMethods)
-                    DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, $"{HarmonyId} ...method {method.Name}");
+                    Debug.Log($"{HarmonyId}.PatchAll: ...method {method.Name}");
             }
             else
-                DebugOutputPanel.AddMessage(PluginManager.MessageType.Warning, $"{HarmonyId} ERROR: methods not patched");
+                Debug.Log($"{HarmonyId}.PatchAll: ERROR methods not patched");
             //Harmony.DEBUG = false;
         }
 
         public static void UnpatchAll()
         {
-            if (!patched) { Debug.Log("UnpatchAll: not patched!"); return; }
+            if (!patched) { Debug.Log($"{HarmonyId}.UnpatchAll: not patched!"); return; }
             //Harmony.DEBUG = true;
             var harmony = new Harmony(HarmonyId);
             harmony.UnpatchAll(HarmonyId);
+            Debug.Log($"{HarmonyId}.UnpatchAll: OK methods unpatched");
             patched = false;
             //Harmony.DEBUG = false;
         }
@@ -281,7 +282,7 @@ IL_0106: stloc.s 7
                 if (instr.opcode == OpCodes.Callvirt && instr.operand == AccessTools.Method(typeof(BuildingManager), "GetRandomBuildingInfo"))
                 {
                     // new and changed instructions
-                    yield return new CodeInstruction(OpCodes.Ldloc_S, 64); // ldloc.s 64
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, 65); // ldloc.s 64, 230630 Adjust for latest patch - there is another variable used, so all stack ids are +1
                     yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(BuildingManager_Extensions), "GetRandomBuildingInfoDis"));
                     // skip old instructions
                     _ = ilcode.MoveNext();
